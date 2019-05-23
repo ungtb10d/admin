@@ -62,8 +62,9 @@ if (!empty($update))
                             0, # not crypted
                             session_issecure()))
       {
-        $res = db_execute("UPDATE user SET status='A' WHERE user_name=?",
-                          array($form_loginname));
+        if (session_check_email_domain ($form_loginname))
+          $res = db_execute("UPDATE user SET status='A' WHERE user_name=?",
+                            array($form_loginname));
         session_redirect($GLOBALS['sys_home']."account/first.php");
       }
   }

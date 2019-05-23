@@ -4,7 +4,7 @@
 # Copyright (C) 1999-2000 The SourceForge Crew
 # Copyright (C) 2003-2006 Mathieu Roy <yeupou--gnu.org>
 # Copyright (C) 2003-2006 Derek Feichtinger <derek.feichtinger--cern.ch>
-# Copyright (C) 2017, 2018 Ineiev
+# Copyright (C) 2017, 2018, 2019 Ineiev
 #
 # This file is part of Savane.
 #
@@ -498,6 +498,37 @@ function session_exists($uid, $hash)
   return (db_numrows(db_execute("SELECT NULL FROM session WHERE user_id=?
                                  AND session_hash=?",
                                 array($uid, $hash))) == 1);
+}
+
+# Verify if the email domain is banned; if yes, remove the account.
+# Return value: false if the account was removed, else true.
+function session_check_email_domain ($name)
+{
+  # If account email domain is banned, remove the account.
+  $uid = user_getid ($name);
+  $email = user_getemail ($uid);
+  if ($email == false)
+    return false;
+
+  $domain = preg_replace ('/.*@/', '', $email);
+  $result = db_execute ("SELECT domain,date,count FROM banned_email_domains");
+  if (!db_numrows ($result))
+    return false;
+  $add_date = db_result (user_get_result_set ($uid), 0, 'add_date');
+  while ($entry = db_fetch_array ($result))
+    {
+       if ($add_date < $entry['date']) # Only remove new users.
+         continue;
+       if (!preg_match ($entry['domain'], $domain))
+         continue;
+       if (user_is_loggedin ())
+         session_logout ();
+       user_delete ($uid);
+       db_execute ("UPDATE banned_email_domains SET count=? where domain=?",
+                   array ($entry['count'] + 1, $entry['domain']));
+       return false;
+    }
+  return true;
 }
 
 function session_logout()

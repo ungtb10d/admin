@@ -32,7 +32,8 @@ function no_i18n($string)
 }
 
 extract(sane_import('get', array('ban_user_id', 'wash_user_id',
-                                 'max_rows', 'offset')));
+                                 'max_rows', 'offset', 'wash_email_ban')));
+extract(sane_import('post', array('domain', 'note', 'ban_domain')));
 
 if ($ban_user_id)
   {
@@ -62,8 +63,31 @@ if ($wash_user_id)
       }
   }
 
+if ($wash_email_ban)
+  db_execute ("DELETE FROM banned_email_domains WHERE domain=?",
+              array($wash_email_ban));
+
 site_admin_header(array('title' => no_i18n("Monitor Spam"),
                         'context' => 'admhome'));
+
+if ($ban_domain)
+  {
+     $result = null;
+     if ($domain !== '')
+       $result = db_autoexecute ('banned_email_domains',
+                                 array('domain' => $domain,
+                                       'date' => time (),
+                                       'added_by' => user_getid (),
+                                       'note' => $note,
+                                       'count' => 0), DB_AUTOQUERY_INSERT);
+     if (!$result || db_affected_rows ($result) < 1)
+       {
+         fb(no_i18n("Ban failed"), 1);
+         print db_error ();
+       }
+     else
+       fb(no_i18n("Banned '$domain'"));
+  }
 
 print '<h2>' . html_anchor(no_i18n("Suspected users"), "users_results") . '</h2>
 <p>' . no_i18n("Follow the list of users that post content that as been flagged
@@ -179,6 +203,58 @@ else
     # More results than $max? Print next/prev.
     html_nextprev(htmlentities ($_SERVER['PHP_SELF']).'?', $max_rows, $i, "users");
   }
+
+print "<p>&nbsp;</p>\n";
+print '<h2>' . html_anchor(no_i18n("Banned email domains"), "email_domains")
+      . "</h2>\n\n";
+
+function print_banned_email_domains ($result)
+{
+  $title_arr = array();
+  $title_arr[] = no_i18n("Domain");
+  $title_arr[] = no_i18n("Count");
+  $title_arr[] = no_i18n("Date");
+  $title_arr[] = no_i18n("Added by");
+  $title_arr[] = no_i18n("Note");
+
+  print html_build_list_table_top ($title_arr);
+
+  $i = 0;
+  while ($entry = db_fetch_array($result))
+    {
+      $i++;
+      print '<tr class="' . utils_get_alt_row_color($i) . '">';
+      print '<td width="25%">'
+. '<a href=' . htmlentities ($_SERVER['PHP_SELF'])
+. '?wash_email_ban=' . $entry['domain']
+. '><img
+src="' . $GLOBALS['sys_home'] . 'images/' .SV_THEME
+. '.theme/misc/trash.png" class="icon" alt="' . _("Delete") . '" /></a>'
+. $entry['domain'] . '</td>
+<td width="10%">' . $entry['count']
+. '</td><td width="15%">' . utils_format_date ($entry['date'], 'natural')
+. '</td><td width="15%">' . user_getname ($entry['added_by'])
+. "</td>\n<td>" . $entry['note'] . "</td></tr>\n";
+    }
+  print "</table>\n";
+}
+
+# CREATE TABLE banned_email_domains (domain varchar(221),count int(11),
+#                                    date int(11),added_by int(11),note text);
+$result = db_execute ("SELECT domain,date,added_by,note,count "
+                      . "FROM banned_email_domains");
+if (!db_numrows ($result))
+  print '<p>' . no_i18n ("No email domains banned") . "</p>\n";
+else
+  print_banned_email_domains ($result);
+
+print '<form action="' . ($_SERVER['PHP_SELF']) . '" method="post">
+<p>Domains to ban: <input type="text" title="' . no_i18n ("Domains to ban")
+. '" name="domain" size="40" /></p>
+<p>Note: <input type="text" title="' . no_i18n ("Note")
+. '" name="note" size="40" /></p>
+<p><input type="submit" name="ban_domain" value="' . no_i18n ('Ban Domain')
+. '" />' . "</form>\n\n";
 
 $HTML->footer(array());
 ?>

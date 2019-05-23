@@ -457,7 +457,10 @@ administrators."), 1);
                   $confirm_hash));
 
                 if ($success)
-                  fb(_("Email address updated."));
+                  {
+                    fb(_("Email address updated."));
+                    session_check_email_domain ($row_user['user_name']);
+                  }
                 else
                   fb(_("Failed to update the database."), 1);
               }
