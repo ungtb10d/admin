@@ -1,7 +1,7 @@
 <?php
 # Manage commit hooks/triggers.
 # Copyright (C) 2006  Sylvain Beucler
-# Copyright (C) 2017, 2018 Ineiev
+# Copyright (C) 2017, 2018, 2021 Ineiev
 #
 # This file is part of the Savane project
 #
@@ -281,6 +281,8 @@ echo "<input type='hidden' name='arr_id[new]' value='new' />\n";
 $caption = _('Add');
 echo "<input type='submit' name='log_accum' value='$caption' /\n>
 </form>\n";
+
+print "<p>" . _("The changes come into effect within an hour.") . "</p>\n";
 
 site_project_footer(array());
 ?>
