@@ -1,8 +1,7 @@
 <?php
 # Captcha support.
 #
-# Copyright (C) 2011, 2012 Michael J. Flickinger
-# Copyright (C) 2017, 2022 Ineiev
+# Copyright (C) 2022 Ineiev
 #
 # This file is part of Savane.
 #
@@ -25,33 +24,98 @@ include_once ('include/ac_config.php');
 if (!empty ($sys_conf_file) && is_readable ($sys_conf_file))
   include_once $sys_conf_file;
 
-if (empty ($sys_securimagedir))
-  $sys_securimagedir = '/usr/src/securimage';
+if (empty ($sys_captchadir))
+  $sys_captchadir = '/usr/share/php';
 
-include_once "$sys_securimagedir/securimage.php";
+if (empty ($sys_captcha_font_path))
+ $sys_captcha_font_path = '/usr/share/fonts/truetype/dejavu/';
+if (empty ($sys_captcha_font_file))
+ $sys_captcha_font_file = 'DejaVuSans-Bold.ttf';
 
-function run_image ($img)
+$inc_saved = get_include_path ();
+
+set_include_path ("$inc_saved:$sys_captchadir");
+include_once "Text/CAPTCHA.php";
+set_include_path ($inc_saved);
+
+function output_image ($img)
 {
-  if (isset ($_GET['play']) && $_GET['play'])
-    {
-      $img->audio_format = 'mp3';
-      if (isset ($_GET['format']))
-        if (strtolower ($_GET['format']) == 'wav')
-          $img->audio_format = 'wav';
-      $img->outputAudioFile ();
-    }
-  $img->show ();
+  header ('Content-Type: image/png');
+  header ('Content-Length: ' . strlen ($img));
+  print $img;
+  exit (0);
 }
 
-$img = new securimage ();
+function random_color ($dark)
+{
+  $start = $dark? 0: 127;
+  $end = $dark? 64: 255;
+  $ret = '#';
+  for ($i = 0; $i < 3; $i++)
+    $ret .= sprintf ("%02X", rand ($start, $end));
+  return $ret;
+}
+
+function run_image ()
+{
+  global $sys_captcha_font_path, $sys_captcha_font_file;
+  $bg_dark = rand (0, 255) < 128;
+  $chars = 'abcdefghijklmnopqrstuvxyz346789';
+  $options = [
+    'width' => 215, 'height' => 80, 'output' => 'png',
+    'imageOptions' => [
+      'font_size' => 24,
+      'font_path' => $sys_captcha_font_path,
+      'font_file' => $sys_captcha_font_file,
+      'text_color' => random_color (!$bg_dark),
+      'background_color' => random_color ($bg_dark)
+    ],
+    'phraseOptions' => ['unpronounceable', $chars],
+  ];
+  session_start ();
+
+  if (isset ($_SESSION['captcha_code']))
+    $options['phrase'] = $_SESSION['captcha_code'];
+
+  $captcha_class = 'Image';
+
+  $captcha = Text_CAPTCHA::factory ($captcha_class);
+  $captcha->init ($options);
+  if (!isset ($_SESSION['captcha_code']))
+    $_SESSION['captcha_code'] = $captcha->getPhrase ();
+  # FIXME: sound output is missing.
+  output_image ($captcha->getCAPTCHA ());
+}
+
+function unset_captcha_code ()
+{
+  unset ($_SESSION['captcha_code']);
+}
+
+function validate_captcha ()
+{
+  global $antispam_is_valid;
+
+  session_start ();
+  if ($antispam_is_valid === 'unset')
+    {
+      unset_captcha_code ();
+      return;
+    }
+
+  if (
+    isset ($_POST['captcha_code']) && isset ($_SESSION['captcha_code'])
+    && $_POST['captcha_code'] === $_SESSION['captcha_code']
+  )
+    $antispam_is_valid = true;
+  else
+    fb (_("Please correctly answer the antispam captcha!"), 1);
+
+  unset_captcha_code ();
+}
 
 if (isset ($antispam_is_valid))
-  {
-    if ($img->check ($_POST['captcha_code']) == false)
-      fb (_("Please correctly answer the antispam captcha!"), 1);
-    else
-      $antispam_is_valid = true;
-  }
+  validate_captcha ();
 else
-  run_image ($img);
+  run_image ();
 ?>

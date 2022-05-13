@@ -60,7 +60,7 @@ $email_is_valid = false;
 $realname_is_valid = false;
 $antispam_is_valid = false;
 
-if (!empty ($update) and form_check ($form_id))
+if (!empty ($update) && form_check ($form_id))
   {
     # Form is submitted.
     if ($sys_registration_text_spam_test)
@@ -158,7 +158,13 @@ if (!empty ($update) and form_check ($form_id))
             # KRB5_BAD_USER
           }
       }
-  } # if (!empty($update) and form_check($form_id))
+  } # if (!empty($update) && form_check($form_id))
+elseif ($sys_registration_captcha)
+  {
+    $antispam_is_valid = 'unset';
+    include_once '../captcha.php';
+    $antispam_is_valid = false;
+  }
 
 $form_is_valid = $login_is_valid && $pw_is_valid && $email_is_valid
   && $realname_is_valid && $antispam_is_valid;
@@ -313,8 +319,8 @@ if ($sys_registration_captcha)
     print "[ <a href=\"$url?play=1\">" . _("Play captcha") . "</a> ]"
       . "<br />\n";
     print _("Antispam test:")
-      . '<input type="text" name="captcha_code" size="10" '
-      . 'maxlength="6" />';
+      . '<input type="text" name="captcha_code" size="17" '
+      . 'maxlength="17" />';
   }
 # Extension for PAM authentication.
 # FIXME: for now, only the PAM authentication that exists is for AFS.

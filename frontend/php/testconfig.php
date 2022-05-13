@@ -141,24 +141,24 @@ function test_sys_upload_dir ()
 
 function test_captcha ()
 {
-  global $sys_securimagedir;
-  $default_dir = '/usr/src/securimage';
+  global $sys_captchadir;
+  $default_dir = '/usr/share/php/Text/';
 
   print "<h2>Captcha</h2>\n\n";
-  if (empty ($sys_securimagedir))
+  if (empty ($sys_captchadir))
     {
-      print "<p><strong>sys_securimagedir isn't set.</strong></p>\n";
+      print "<p><strong>sys_captchadir isn't set.</strong></p>\n";
       print "<p>Falling back to default, $default_dir</p>\n";
-      $sys_securimagedir = $default_dir;
+      $sys_captchadir = $default_dir;
     }
   else
-    print "<p><b>sys_securimagedir</b> is set to $sys_securimagedir</p>\n";
-  if (!is_dir ($sys_securimagedir))
+    print "<p><b>sys_captchadir</b> is set to $sys_captchadir</p>\n";
+  if (!is_dir ($sys_captchadir))
     {
-      print "<p><strong>No $sys_securimagedir directory found.</strong></p>\n";
+      print "<p><strong>No $sys_captchadir directory found.</strong></p>\n";
       return;
     }
-  $f = "$sys_securimagedir/securimage.php";
+  $f = "$sys_captchadir/CAPTCHA.php";
   if (!is_file ($f))
     {
       print "<p><strong>No $f file found.</strong></p>\n";
