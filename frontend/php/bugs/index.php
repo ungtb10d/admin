@@ -384,6 +384,8 @@ switch ($func)
           }
         if (!$is_trackeradmin && db_result ($result, 0, 'discussion_lock'))
           exit_permission_denied ();
+        if (!group_restrictions_check ($group_id, ARTIFACT, 2))
+          exit_permission_denied ();
       }
     elseif (!$is_trackeradmin)
       exit_permission_denied ();
