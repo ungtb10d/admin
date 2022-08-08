@@ -37,7 +37,7 @@ if (!user_isloggedin ())
   exit_not_logged_in ();
 
 if (!$touser)
-  exit_missing_param ();
+  exit_missing_param (['touser']);
 
 $result = db_execute ("
   SELECT email, user_name FROM user
@@ -62,7 +62,7 @@ foreach (['subject', 'body', 'fromuser'] as $p)
   if (empty ($$p))
     $missing_params[] = $p;
 if (!empty ($missing_params))
-  exit_missing_param (join (', ', $missing_params));
+  exit_missing_param ([$missing_params]);
 
 if ($cc_me)
   $touser .= ", $fromuser";

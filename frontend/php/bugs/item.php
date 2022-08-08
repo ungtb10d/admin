@@ -28,7 +28,7 @@ extract (sane_import ('get', ['name' => 'user']));
 $tracker = ARTIFACT;
 
 if (empty ($item_id))
-  exit_missing_param ('item_id');
+  exit_missing_param (['item_id']);
 
 $fields = ['group_id', 'privacy'];
 $field_list = join (', ', $fields);
@@ -55,7 +55,7 @@ $fname = "$item_id.txt";
 if ($data_are_private)
   {
     if (empty ($user))
-      exit_missing_param ('user');
+      exit_missing_param (['user']);
 
     $result = db_execute (
       "SELECT user_id FROM user WHERE user_name = ?", [$user]
