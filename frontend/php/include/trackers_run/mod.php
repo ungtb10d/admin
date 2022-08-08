@@ -85,12 +85,14 @@ if ($res_arr['privacy'] == "2")
           . "allowed to read private items.")
       );
   }
-# Check if it is possible for the current user to post a comment. If not
-# add a message.
-if (!group_restrictions_check($group_id, ARTIFACT, 2))
-  $private_intro .= ' '
-    . _("You are not allowed to post comments on this tracker "
-        . "with your current\nauthentication level.");
+# Check if it is possible for the current user to post a comment.
+if (!group_restrictions_check ($group_id, ARTIFACT, 2))
+  {
+    $private_intro .= ' '
+       . _("You are not allowed to post comments on this tracker "
+         . "with your current\nauthentication level.");
+    $enable_comments = false;
+  }
 
 trackers_header ([
   'title' =>
@@ -148,14 +150,16 @@ $class = utils_get_priority_color (
 print "<h1 class=\"$class\"><i>$item_link</i>: ";
 print $res_arr['summary'] . "</h1>\n";
 
-print form_header (
-  $_SERVER['PHP_SELF'], $form_id, "post",
-  'enctype="multipart/form-data" name="item_form"'
-);
-print form_input ("hidden", "func", "postmoditem");
-print form_input ("hidden", "group_id", $group_id);
-print form_input ("hidden", "item_id", $item_id);
-
+if ($enable_comments)
+  {
+    print form_header (
+      $_SERVER['PHP_SELF'], $form_id, "post",
+      'enctype="multipart/form-data" name="item_form"'
+    );
+    print form_hidden (
+      ["func" => "postmoditem", "group_id" => $group_id, "item_id" => $item_id]
+    );
+  }
 # Colspan explanation:
 #
 #  We want the following, twice much space for the value than for the label:
@@ -931,21 +935,23 @@ if ($check_member ($group_id, ARTIFACT, '3') && ARTIFACT != "cookbook")
     print '</span>';
   } # if ($check_member ($group_id, ARTIFACT, '3') && ARTIFACT != "cookbook")
 
-# Minimal anti-spam.
-if (!user_isloggedin ())
-  print '<p class="noprint"><label for="check">'
-    . _("Please enter the title of <a\n"
-        . "href=\"https://en.wikipedia.org/wiki/George_Orwell\">"
-        . "George Orwell</a>'s famous\ndystopian book (it's a date):")
-    . "</label> <input type='text' id='check' name='check' /></p>\n";
+if ($enable_comments)
+  {
+    # Minimal anti-spam.
+    if (!user_isloggedin ())
+      print '<p class="noprint"><label for="check">'
+        . _("Please enter the title of <a\n"
+            . "href=\"https://en.wikipedia.org/wiki/George_Orwell\">"
+            . "George Orwell</a>'s famous\ndystopian book (it's a date):")
+        . "</label> <input type='text' id='check' name='check' /></p>\n";
 
-print "<p>&nbsp;</p>\n";
-print '<div align="center" class="noprint">'
-  . form_submit (_("Submit Changes and Browse Items"), "submit", 'class="bold"')
-  . ' '
-  . form_submit (_("Submit Changes and Return to this Item"), "submitreturn")
-  . "</div>\n</form>\n";
-
+    print "<p>&nbsp;</p>\n";
+    print '<div align="center" class="noprint">'
+      . form_submit (_("Submit Changes and Browse Items"), "submit", 'class="bold"')
+      . ' '
+      . form_submit (_("Submit Changes and Return to this Item"), "submitreturn")
+      . "</div>\n</form>\n";
+  }
 print "<p>&nbsp;</p><p>&nbsp;</p>\n";
 print html_hidsubpart_header ("history", _("History"));
 show_item_history ($item_id, $group_id);
