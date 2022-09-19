@@ -839,7 +839,14 @@ function is_broken_msie ()
 
 function utils_setcookie ($name, $value, $expire, $secure = false)
 {
-  setcookie ($name, $value, $expire, $GLOBALS['sys_home'], '', $secure, true);
+  # The domain argument is used in order to pass cookies to sys_file_domain,
+  # which is assumed to be a subdomain of sys_default_domain.
+  # When the session cookies don't come to sys_file_domain, attachments
+  # to private items are inaccessible.
+  setcookie (
+    $name, $value, $expire, $GLOBALS['sys_home'],
+    $GLOBALS['sys_default_domain'], $secure, true
+  );
 }
 
 function utils_set_csp_headers ()
